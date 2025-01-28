@@ -1,3 +1,4 @@
+# notebook2.py
 import os
 import numpy as np
 import pandas as pd
@@ -84,10 +85,9 @@ def main(ticker, interval, period):
     def create_dataset(dataset, number_of_series_for_prediction=24):
         X_data, y_data = [], []
         data_np = dataset.to_numpy()
-        
         for i in range(len(data_np) - number_of_series_for_prediction):
             X_data.append(data_np[i : i + number_of_series_for_prediction])
-            y_data.append(data_np[i + number_of_series_for_prediction, -1])  # On vise la dernière colonne
+            y_data.append(data_np[i + number_of_series_for_prediction, -1])
         return np.array(X_data), np.array(y_data)
 
     X_train, y_train = create_dataset(train, NUMBER_OF_SERIES_FOR_PREDICTION)
@@ -136,9 +136,16 @@ def main(ticker, interval, period):
         restore_best_weights=True
     )
 
+    # Enregistrement du modèle et checkpoints
     os.makedirs("./models", exist_ok=True)
+    model_name = f"{ticker}_{interval}_{period}_model.h5"
+    model_path = os.path.join("./models", model_name)
+
+    checkpoint_name = f"{ticker}_{interval}_{period}_model_checkpoint.keras"
+    checkpoint_path = os.path.join("./models", checkpoint_name)
+
     model_checkpoint = ModelCheckpoint(
-        filepath='./models/model_checkpoint.keras',
+        filepath=checkpoint_path,
         monitor='val_loss',
         mode='min',
         save_best_only=True,
@@ -175,6 +182,10 @@ def main(ticker, interval, period):
     train_preds_rescaled = train_preds * std_dict['Close'] + mean_dict['Close']
     y_train_rescaled = y_train * std_dict['Close'] + mean_dict['Close']
 
+    # Graphe train
+    os.makedirs("graphics", exist_ok=True)
+    train_plot_path = f"graphics/{ticker}_{interval}_{period}_train_plot.png"
+
     plt.figure(figsize=(12, 6))
     plt.plot(y_train_rescaled, label='Vraies valeurs (Train)', color='blue')
     plt.plot(train_preds_rescaled, label='Prédictions (Train)', color='red', linestyle='--')
@@ -183,15 +194,15 @@ def main(ticker, interval, period):
     plt.ylabel('Close Price')
     plt.legend()
     plt.grid(True)
-
-    train_plot_path = f"data/{ticker}_{interval}_{period}_train_plot.png"
     plt.savefig(train_plot_path)
     plt.close()
 
-    # Prédictions sur le test
+    # Graphe test
     test_preds = model.predict(X_test)
     test_preds_rescaled = test_preds * std_dict['Close'] + mean_dict['Close']
     y_test_rescaled = y_test * std_dict['Close'] + mean_dict['Close']
+
+    test_plot_path = f"graphics/{ticker}_{interval}_{period}_test_plot.png"
 
     plt.figure(figsize=(12, 6))
     plt.plot(y_test_rescaled, label='Vraies valeurs (Test)', color='blue')
@@ -201,13 +212,12 @@ def main(ticker, interval, period):
     plt.ylabel('Close Price')
     plt.legend()
     plt.grid(True)
-
-    test_plot_path = f"data/{ticker}_{interval}_{period}_test_plot.png"
     plt.savefig(test_plot_path)
     plt.close()
 
-    model.save('./models/transformer_final.h5')
-    print("Modèle sauvegardé : ./models/transformer_final.h5")
+    # Sauvegarde du modèle final
+    model.save(model_path)
+    print(f"Modèle sauvegardé : {model_path}")
     print(f"Graphique d'entraînement : {train_plot_path}")
     print(f"Graphique de test : {test_plot_path}")
 

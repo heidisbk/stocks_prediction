@@ -1,3 +1,4 @@
+# notebook1.py
 import os
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ import ta
 import sys
 
 def main(ticker, interval, period):
+    # 1) Téléchargement
     gspc_data = yf.download(
         ticker,
         interval=interval,
@@ -18,7 +20,7 @@ def main(ticker, interval, period):
         progress=False
     )
 
-    # DataFrame des features
+    # 2) DataFrame des features
     feature = pd.DataFrame(index = gspc_data.index)
 
     close_prices  = gspc_data['Close'].squeeze()
@@ -45,7 +47,7 @@ def main(ticker, interval, period):
     gspc_data['ADX'] = feature['ADX']
     gspc_data['OBV'] = feature['OBV']
 
-    # Plot
+    # 3) Plot
     plt.figure(figsize=(12, 6))
     plt.plot(gspc_data['Close'], label='Prix de clôture')
     plt.plot(gspc_data['SMA'], label='SMA (14 périodes)', linestyle='--')
@@ -55,40 +57,38 @@ def main(ticker, interval, period):
     plt.legend()
     plt.grid(True)
     
-    # Sauvegarde du graphique en PNG
-    plot_path = f"data/{ticker}_{interval}_{period}_plot.png"
-    os.makedirs("data", exist_ok=True)
+    # 4) Sauvegarde du graphique en ./graphics/
+    os.makedirs("graphics", exist_ok=True)
+    plot_path = f"graphics/{ticker}_{interval}_{period}_plot.png"
     plt.savefig(plot_path)
     plt.close()
     
-    # Nettoyage
+    # 5) Nettoyage
     feature.dropna(inplace=True)
     gspc_data.dropna(inplace=True)
 
+    # 6) PCA + CSV
     features = feature.drop(columns=['Close'])
     target   = feature['Close']
 
-    # StandardScaler
     scaler = StandardScaler()
     features_scaled = scaler.fit_transform(features)
 
-    # PCA
     pca = PCA(n_components=0.9)
     features_pca = pca.fit_transform(features_scaled)
     
     df_pca = pd.DataFrame(features_pca, columns=[f'PC{i+1}' for i in range(features_pca.shape[1])])
     df_final = pd.concat([df_pca, target.reset_index(drop=True)], axis=1)
 
+    os.makedirs("data", exist_ok=True)
     output_filename = f"{ticker}_{interval}_{period}.csv"
     output_path = os.path.join("data", output_filename)
-
     df_final.to_csv(output_path, index=False)
+
     print(f"Fichier CSV généré : {output_path}")
     print(f"Graphique sauvegardé : {plot_path}")
 
-# interval : [1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo]
 if __name__ == "__main__":
-    # Récupération des paramètres en CLI (ex: python notebook1.py --ticker ^GSPC --interval 5m --period 1mo)
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--ticker", default="^GSPC", type=str)
