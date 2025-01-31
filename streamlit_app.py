@@ -4,7 +4,7 @@ import requests
 import os
 from PIL import Image
 
-st.title("Interface Web - Prédiction S&P 500 (Streamlit + FastAPI)")
+st.title("Prédiction S&P 500 et autres actifs")
 
 default_ticker = "^GSPC"
 default_period = "1mo"
@@ -44,8 +44,8 @@ if st.button("Récupérer les données"):
             st.write("Les données étaient déjà présentes en local, pas de nouveau téléchargement.")
         else:
             st.write("Téléchargement et génération du CSV terminés.")
-            st.write("Sortie standard :", resp_data.get("stdout", ""))
-            st.write("Erreurs :", resp_data.get("stderr", ""))
+            # st.write("Sortie standard :", resp_data.get("stdout", ""))
+            # st.write("Erreurs :", resp_data.get("stderr", ""))
 
         plot_path = resp_data["plot_path"]
 
